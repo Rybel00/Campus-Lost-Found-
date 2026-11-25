@@ -1,0 +1,4 @@
+# Static site: a single self-contained HTML page, no build step or dependencies.
+[build]
+  publish = "Campus Lost & Found"
+  command = ""
