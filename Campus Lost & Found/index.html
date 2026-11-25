@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Campus Lost &amp; Found</title>
+<style>
+:root{--bg:#f2f5f7;--surface:#fff;--ink:#1b2733;--muted:#5d6b78;--line:#dde4ea;--brand:#0e5a6b;--brand-ink:#fff;
+--lost:#b4481f;--lost-bg:#fbe9e0;--found:#1b6e4b;--found-bg:#e1f3ea;--pending:#8a6410;--pending-bg:#fbf0cf;
+--claimed:#24508f;--claimed-bg:#e1ebfa;--returned:#3b6b2b;--returned-bg:#e4f2dc;--shadow:0 2px 10px rgba(20,40,60,.08)}
+[data-theme=dark]{--bg:#10181f;--surface:#18232c;--ink:#e8eef3;--muted:#9fb0bd;--line:#2b3b48;--brand:#4fb3c8;--brand-ink:#08222a;
+--lost:#ff9b73;--lost-bg:#3a2218;--found:#6fd8a4;--found-bg:#16342a;--pending:#f1cd6b;--pending-bg:#3a3014;
+--claimed:#8db8f5;--claimed-bg:#182b48;--returned:#a3dc8c;--returned-bg:#203a18;--shadow:none}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 system-ui,-apple-system,"Segoe UI",sans-serif}
+h1,h2,h3{font-family:Georgia,"Times New Roman",serif;line-height:1.2;margin:0 0 .5rem}
+h1{font-size:2.1rem}h2{font-size:1.5rem}h3{font-size:1.15rem}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--brand);outline-offset:2px}
+header{background:var(--surface);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:20}
+.bar{max-width:1100px;margin:auto;padding:.6rem 1rem;display:flex;align-items:center;gap:1rem;flex-wrap:wrap}
+.brand{font:700 1.2rem Georgia,serif;color:var(--brand);margin-right:auto}
+nav{display:flex;gap:.25rem;flex-wrap:wrap}
+nav button{background:none;border:0;padding:.5rem .8rem;border-radius:8px;cursor:pointer;color:var(--muted);font-weight:600}
+nav button:hover{background:var(--bg)}nav button.on{background:var(--brand);color:var(--brand-ink)}
+#menu{display:none}
+main{max-width:1100px;margin:auto;padding:1.25rem 1rem 3rem}
+.view{display:none}.view.on{display:block}
+.btn{border:0;border-radius:8px;padding:.6rem 1rem;cursor:pointer;font-weight:600;background:var(--brand);color:var(--brand-ink)}
+.btn.alt{background:var(--bg);color:var(--ink);border:1px solid var(--line)}
+.btn.bad{background:var(--lost);color:#fff}.btn.sm{padding:.3rem .6rem;font-size:.85rem}
+.btn:hover{filter:brightness(1.08)}.btn:disabled{opacity:.5;cursor:not-allowed}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);padding:1rem}
+.hero{display:grid;gap:1rem;padding:1.5rem;border-radius:18px;background:linear-gradient(120deg,var(--brand),#16384a);color:#fff}
+.hero p{margin:0;max-width:60ch;opacity:.92}
+.hero .row{display:flex;gap:.6rem;flex-wrap:wrap}
+.hero input{flex:1;min-width:200px;padding:.65rem .9rem;border-radius:8px;border:0;color:#1b2733}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:.8rem;margin:1rem 0}
+.stat b{display:block;font:700 2rem Georgia,serif}.stat span{color:var(--muted);font-size:.9rem}
+.chips{display:flex;gap:.5rem;flex-wrap:wrap;margin:.5rem 0 1.2rem}
+.chip{border:1px solid var(--line);background:var(--surface);border-radius:99px;padding:.3rem .8rem;cursor:pointer}
+.chip:hover{border-color:var(--brand)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:1rem}
+.item{display:flex;flex-direction:column;gap:.5rem;padding:0;overflow:hidden}
+.item .pic{height:150px;background:var(--bg);display:grid;place-items:center;font-size:3rem}
+.item .pic img,.detail img{width:100%;height:100%;object-fit:cover}
+.item .body{padding:0 1rem 1rem;display:flex;flex-direction:column;gap:.4rem;flex:1}
+.item p{margin:0;color:var(--muted);font-size:.92rem}.meta{font-size:.85rem;color:var(--muted)}
+.tag{display:inline-block;padding:.1rem .55rem;border-radius:99px;font-size:.78rem;font-weight:700}
+.t-lost{background:var(--lost-bg);color:var(--lost)}.t-found{background:var(--found-bg);color:var(--found)}
+.s-Pending{background:var(--pending-bg);color:var(--pending)}.s-Claimed{background:var(--claimed-bg);color:var(--claimed)}.s-Returned{background:var(--returned-bg);color:var(--returned)}
+.tags{display:flex;gap:.4rem;flex-wrap:wrap}
+.filters{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:.6rem;margin:1rem 0}
+label{display:block;font-weight:600;font-size:.9rem;margin-bottom:.2rem}
+input,select,textarea{width:100%;padding:.55rem .7rem;border:1px solid var(--line);border-radius:8px;background:var(--surface)}
+.form{display:grid;gap:.9rem;max-width:640px}
+.err{color:var(--lost);font-size:.82rem;min-height:1em}
+.preview{display:flex;gap:.6rem;align-items:center;margin-top:.4rem}.preview img{height:90px;border-radius:8px}
+.note{font-size:.85rem;color:var(--muted);background:var(--bg);border-left:4px solid var(--brand);padding:.5rem .8rem;border-radius:6px}
+.empty{text-align:center;padding:2.5rem 1rem;color:var(--muted)}
+dialog{border:0;border-radius:16px;padding:1.2rem;max-width:560px;width:calc(100% - 2rem);background:var(--surface);color:var(--ink);box-shadow:0 10px 40px rgba(0,0,0,.35)}
+dialog::backdrop{background:rgba(10,20,30,.55)}
+.detail img{height:220px;border-radius:10px;margin-bottom:.6rem}
+.detail dl{display:grid;grid-template-columns:auto 1fr;gap:.2rem .8rem;margin:.6rem 0}.detail dt{color:var(--muted)}.detail dd{margin:0}
+.acts{display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.8rem}
+.tbl{overflow-x:auto}table{width:100%;border-collapse:collapse;font-size:.9rem}
+th,td{padding:.55rem .6rem;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}
+.bars{display:grid;gap:.4rem}.bar-row{display:grid;grid-template-columns:130px 1fr 30px;gap:.5rem;align-items:center;font-size:.85rem}
+.bar-row i{display:block;height:12px;background:var(--brand);border-radius:6px;min-width:2px}
+#toasts{position:fixed;right:1rem;bottom:1rem;display:grid;gap:.5rem;z-index:50}
+.toast{padding:.7rem 1rem;border-radius:10px;color:#fff;background:var(--found);box-shadow:0 4px 16px rgba(0,0,0,.25);animation:in .2s}
+.toast.error{background:var(--lost)}
+@keyframes in{from{transform:translateY(10px);opacity:0}}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+@media(max-width:720px){#menu{display:block}nav{display:none;width:100%}nav.open{display:flex;flex-direction:column}h1{font-size:1.6rem}}
+</style>
+</head>
+<body>
+<header><div class="bar">
+  <div class="brand">Campus Lost &amp; Found</div>
+  <button class="btn alt sm" id="menu" aria-label="Toggle menu">Menu</button>
+  <nav id="nav" aria-label="Main">
+    <button data-go="home">Home</button><button data-go="lost">Lost Items</button><button data-go="found">Found Items</button>
+    <button data-go="report-lost">Report Lost Item</button><button data-go="report-found">Report Found Item</button><button data-go="admin">Admin Dashboard</button>
+  </nav>
+  <button class="btn alt sm" id="theme" aria-label="Toggle dark mode">Dark mode</button>
+</div></header>
+
+<main>
+<section class="view" id="v-home">
+  <div class="hero">
+    <h1>Lost something on campus? Found something?</h1>
+    <p>Students and school personnel can report lost and found belongings in one place, search listings, and help items get back to their owners.</p>
+    <form class="row" id="homeSearch"><input id="hq" type="search" placeholder="Search by item, place, or description" aria-label="Search items"><button class="btn alt">Search</button></form>
+    <div class="row"><button class="btn alt" data-go="report-lost">Report a lost item</button><button class="btn alt" data-go="report-found">Report a found item</button></div>
+  </div>
+  <div class="stats" id="homeStats"></div>
+  <h2>Browse by category</h2><div class="chips" id="homeCats"></div>
+  <h2>Recent reports</h2><div class="grid" id="recent"></div>
+</section>
+
+<section class="view" id="v-items">
+  <h2 id="itemsTitle">Items</h2>
+  <div class="filters card">
+    <div><label for="fq">Search</label><input id="fq" type="search" placeholder="Name, description, place"></div>
+    <div><label for="ft">Report type</label><select id="ft"><option value="">All</option><option value="lost">Lost</option><option value="found">Found</option></select></div>
+    <div><label for="fc">Category</label><select id="fc"></select></div>
+    <div><label for="fs">Status</label><select id="fs"><option value="">All</option><option>Pending</option><option>Claimed</option><option>Returned</option></select></div>
+    <div><label for="fl">Location</label><select id="fl"></select></div>
+    <div><label for="fo">Sort by</label><select id="fo"><option value="new">Most recent</option><option value="old">Oldest</option><option value="az">Alphabetical</option></select></div>
+    <div style="align-self:end"><button class="btn alt" id="clear" style="width:100%">Clear filters</button></div>
+  </div>
+  <p class="meta" id="count"></p><div class="grid" id="list"></div>
+</section>
+
+<section class="view" id="v-report-lost"><h2>Report a lost item</h2><div id="formLost"></div></section>
+<section class="view" id="v-report-found"><h2>Report a found item</h2><div id="formFound"></div></section>
+
+<section class="view" id="v-admin">
+  <h2>Admin dashboard</h2>
+  <div id="adminGate" class="card form">
+    <p class="note"><b>Prototype only.</b> This login is checked in the browser and is not secure. Real authentication and authorization need a backend server. Demo password: <code>admin123</code></p>
+    <div><label for="pw">Administrator password</label><input id="pw" type="password" autocomplete="off"><div class="err" id="pwErr"></div></div>
+    <button class="btn" id="login">Log in</button>
+  </div>
+  <div id="adminBody" hidden>
+    <div class="acts" style="margin:0 0 .8rem"><button class="btn alt sm" id="logout">Log out</button><button class="btn alt sm" id="sample">Add sample reports</button></div>
+    <div class="stats" id="adminStats"></div>
+    <div class="card" style="margin-bottom:1rem"><h3>Reports by category</h3><div class="bars" id="chart"></div></div>
+    <div class="filters card">
+      <div><label for="aq">Search</label><input id="aq" type="search"></div>
+      <div><label for="at">Type</label><select id="at"><option value="">All</option><option value="lost">Lost</option><option value="found">Found</option></select></div>
+      <div><label for="as">Status</label><select id="as"><option value="">All</option><option>Pending</option><option>Claimed</option><option>Returned</option></select></div>
+      <div><label for="ao">Sort by</label><select id="ao"><option value="new">Most recent</option><option value="old">Oldest</option><option value="az">Alphabetical</option></select></div>
+    </div>
+    <div class="card tbl"><table><thead><tr><th>ID</th><th>Item</th><th>Type</th><th>Category</th><th>Date</th><th>Location</th><th>Status</th><th>Actions</th></tr></thead><tbody id="rows"></tbody></table><div class="empty" id="aEmpty" hidden>No reports match.</div></div>
+  </div>
+</section>
+</main>
+
+<dialog id="dlg"></dialog>
+<div id="toasts" aria-live="polite"></div>
+
+<script>
+/* ===== Setup & data (Supabase shared database) ===== */
+const SUPABASE_URL = 'https://necgosqfuhvynusidzpq.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_BROhArP-BCvO-_SSUodttg_skyuyMHo';
+const REPORTS_ENDPOINT = `${SUPABASE_URL}/rest/v1/reports`;
+const CATS = ['ID Card','Wallet','Mobile Phone','Keys','Bag','Books and Notebooks','Electronic Devices','Clothing','Accessories','Other'];
+const ICON = {'ID Card':'🪪','Wallet':'👛','Mobile Phone':'📱','Keys':'🔑','Bag':'🎒','Books and Notebooks':'📚','Electronic Devices':'💻','Clothing':'🧥','Accessories':'⌚','Other':'📦'};
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let reports = [];
+let dataReady = false;
+let admin = sessionStorage.getItem('clfAdmin') === '1';
+const F = {q:'',type:'',cat:'',status:'',loc:'',sort:'new'};
+
+/* Supabase REST helpers. The publishable key is public; database policies enforce access. */
+function apiHeaders(extra = {}) {
+  return { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}`, 'Content-Type':'application/json', ...extra };
+}
+function fromDb(row) {
+  return { id:row.id, itemName:row.item_name, category:row.category, description:row.description,
+    reportType:row.report_type, date:row.date, location:row.location, contact:row.contact,
+    image:row.image_url || '', status:row.status, createdAt:row.created_at, updatedAt:row.updated_at };
+}
+function toDb(r) {
+  return { item_name:r.itemName, category:r.category, description:r.description, report_type:r.reportType,
+    date:r.date, location:r.location, contact:r.contact, image_url:r.image || null,
+    status:r.status, updated_at:r.updatedAt || new Date().toISOString() };
+}
+async function fetchReports() {
+  const response = await fetch(`${REPORTS_ENDPOINT}?select=*&order=created_at.desc`, {headers:apiHeaders()});
+  if (!response.ok) throw new Error(await response.text());
+  reports = (await response.json()).map(fromDb);
+  dataReady = true;
+  syncFilters(); render();
+}
+async function insertReport(r) {
+  const response = await fetch(REPORTS_ENDPOINT, {method:'POST', headers:apiHeaders({'Prefer':'return=representation'}), body:JSON.stringify(toDb(r))});
+  if (!response.ok) throw new Error(await response.text());
+  return fromDb((await response.json())[0]);
+}
+async function updateReport(id, patch) {
+  const response = await fetch(`${REPORTS_ENDPOINT}?id=eq.${encodeURIComponent(id)}`, {method:'PATCH', headers:apiHeaders({'Prefer':'return=representation'}), body:JSON.stringify(toDb(patch))});
+  if (!response.ok) throw new Error(await response.text());
+  const rows = await response.json(); if (!rows.length) throw new Error('No report was updated. Check database permissions.');
+  return fromDb(rows[0]);
+}
+async function deleteReport(id) {
+  const response = await fetch(`${REPORTS_ENDPOINT}?id=eq.${encodeURIComponent(id)}`, {method:'DELETE',headers:apiHeaders()});
+  if (!response.ok) throw new Error(await response.text());
+}
+const newId = () => 'LF-' + Date.now().toString(36).toUpperCase() + Math.random().toString(36).slice(2,5).toUpperCase();
+const today = () => new Date().toISOString().slice(0,10);
+
+/* ===== Notifications, confirm dialog ===== */
+function toast(msg, kind) {
+  const t = document.createElement('div'); t.className = 'toast ' + (kind || ''); t.textContent = msg;
+  $('#toasts').append(t); setTimeout(() => t.remove(), 3500);
+}
+function confirmBox(msg, onYes) {
+  openDlg(`<h3>Please confirm</h3><p>${esc(msg)}</p><div class="acts"><button class="btn bad" id="yes">Delete</button><button class="btn alt" id="no">Cancel</button></div>`);
+  $('#yes').onclick = () => { $('#dlg').close(); onYes(); }; $('#no').onclick = () => $('#dlg').close();
+}
+function openDlg(html) { $('#dlg').innerHTML = html; if (!$('#dlg').open) $('#dlg').showModal(); }
+
+/* ===== Navigation ===== */
+function go(view) {
+  if (view === 'lost' || view === 'found') { Object.assign(F, {type:view, q:'', cat:'', status:'', loc:''}); view = 'items'; syncFilters(); }
+  document.querySelectorAll('.view').forEach(v => v.classList.toggle('on', v.id === 'v-' + view));
+  document.querySelectorAll('nav button').forEach(b => {
+    const g = b.dataset.go; b.classList.toggle('on', g === view || (view === 'items' && g === F.type));
+  });
+  $('#nav').classList.remove('open'); window.scrollTo(0,0); render();
+}
+document.addEventListener('click', e => { const b = e.target.closest('[data-go]'); if (b) go(b.dataset.go); });
+$('#menu').onclick = () => $('#nav').classList.toggle('open');
+$('#theme').onclick = () => {
+  const d = document.documentElement.dataset.theme === 'dark'; document.documentElement.dataset.theme = d ? '' : 'dark';
+  try { localStorage.setItem('clfTheme', d ? '' : 'dark'); } catch (e) {}
+};
+try { document.documentElement.dataset.theme = localStorage.getItem('clfTheme') || ''; } catch (e) {}
+
+/* ===== Rendering ===== */
+function render() {
+  renderHome(); renderItems(); if (admin) renderAdmin();
+  $('#adminGate').hidden = admin; $('#adminBody').hidden = !admin;
+}
+const counts = () => ({total:reports.length, lost:reports.filter(r=>r.reportType==='lost').length, found:reports.filter(r=>r.reportType==='found').length,
+  Pending:reports.filter(r=>r.status==='Pending').length, Claimed:reports.filter(r=>r.status==='Claimed').length, Returned:reports.filter(r=>r.status==='Returned').length});
+const statBox = (n, l) => `<div class="card stat"><b>${n}</b><span>${l}</span></div>`;
+
+function card(r) {
+  return `<article class="card item"><div class="pic">${r.image ? `<img src="${r.image}" alt="Photo of ${esc(r.itemName)}">` : ICON[r.category] || '📦'}</div>
+  <div class="body"><div class="tags"><span class="tag t-${r.reportType}">${r.reportType === 'lost' ? 'Lost' : 'Found'}</span><span class="tag s-${r.status}">${r.status}</span></div>
+  <h3>${esc(r.itemName)}</h3><div class="meta">${esc(r.category)} · ${esc(r.location)} · ${esc(r.date)}</div>
+  <p>${esc(r.description.length > 90 ? r.description.slice(0,90) + '…' : r.description)}</p>
+  <button class="btn sm" data-view="${r.id}" style="margin-top:auto;align-self:flex-start">View details</button></div></article>`;
+}
+function renderHome() {
+  const c = counts();
+  $('#homeStats').innerHTML = statBox(c.total,'Total reports') + statBox(c.lost,'Lost items') + statBox(c.found,'Found items') + statBox(c.Claimed + c.Returned,'Claimed or returned');
+  $('#homeCats').innerHTML = CATS.map(k => `<button class="chip" data-cat="${esc(k)}">${ICON[k]} ${esc(k)}</button>`).join('');
+  const rec = [...reports].sort((a,b) => String(b.createdAt || '').localeCompare(String(a.createdAt || ''))).slice(0,6);
+  $('#recent').innerHTML = rec.length ? rec.map(card).join('') : '<div class="empty card" style="grid-column:1/-1">No reports yet. Report a lost or found item to get started.</div>';
+}
+function applyFilters(list, f) {
+  const q = f.q.trim().toLowerCase();
+  list = list.filter(r => (!f.type || r.reportType === f.type) && (!f.cat || r.category === f.cat) && (!f.status || r.status === f.status) && (!f.loc || r.location === f.loc)
+    && (!q || [r.itemName, r.description, r.category, r.location].some(x => x.toLowerCase().includes(q))));
+  return list.sort((a,b) => f.sort === 'az' ? a.itemName.localeCompare(b.itemName) : f.sort === 'old' ? a.date.localeCompare(b.date) : b.date.localeCompare(a.date));
+}
+function syncFilters() {
+  $('#fc').innerHTML = '<option value="">All</option>' + CATS.map(k => `<option>${esc(k)}</option>`).join('');
+  const locs = [...new Set(reports.map(r => r.location))].sort();
+  if (F.loc && !locs.includes(F.loc)) F.loc = '';
+  $('#fl').innerHTML = '<option value="">All</option>' + locs.map(l => `<option>${esc(l)}</option>`).join('');
+  $('#fq').value = F.q; $('#ft').value = F.type; $('#fc').value = F.cat; $('#fs').value = F.status; $('#fl').value = F.loc; $('#fo').value = F.sort;
+}
+function renderItems() {
+  $('#itemsTitle').textContent = F.type === 'lost' ? 'Lost items' : F.type === 'found' ? 'Found items' : 'All reports';
+  const list = applyFilters(reports, F);
+  $('#count').textContent = list.length + ' of ' + reports.length + ' reports shown';
+  $('#list').innerHTML = list.length ? list.map(card).join('') : `<div class="empty card" style="grid-column:1/-1">No matching items found. Try clearing the filters.</div>`;
+}
+/* Filter bar events (filters work together) */
+[['fq','q'],['ft','type'],['fc','cat'],['fs','status'],['fl','loc'],['fo','sort']].forEach(([id,k]) => {
+  $('#'+id).addEventListener(id === 'fq' ? 'input' : 'change', e => { F[k] = e.target.value; renderItems(); });
+});
+$('#clear').onclick = () => { Object.assign(F, {q:'',type:F.type,cat:'',status:'',loc:'',sort:'new'}); syncFilters(); renderItems(); };
+$('#homeSearch').onsubmit = e => { e.preventDefault(); Object.assign(F, {q:$('#hq').value, type:'', cat:'', status:'', loc:''}); syncFilters(); go2items(); };
+function go2items() { document.querySelectorAll('.view').forEach(v => v.classList.toggle('on', v.id === 'v-items')); document.querySelectorAll('nav button').forEach(b => b.classList.remove('on')); renderItems(); }
+document.addEventListener('click', e => {
+  const c = e.target.closest('[data-cat]'); if (c) { Object.assign(F, {q:'', type:'', cat:c.dataset.cat, status:'', loc:''}); syncFilters(); go2items(); }
+  const v = e.target.closest('[data-view]'); if (v) showDetail(v.dataset.view);
+});
+
+/* ===== Report forms (shared by lost and found) ===== */
+function formHTML(p, withPhoto) {
+  return `<div><label for="${p}n">Item name *</label><input id="${p}n" maxlength="80"><div class="err" id="${p}nE"></div></div>
+  <div><label for="${p}c">Category *</label><select id="${p}c"><option value="">Select a category</option>${CATS.map(k => `<option>${k}</option>`).join('')}</select><div class="err" id="${p}cE"></div></div>
+  <div><label for="${p}d">Description *</label><textarea id="${p}d" rows="3" maxlength="500" placeholder="Color, brand, marks, contents"></textarea><div class="err" id="${p}dE"></div></div>
+  <div><label for="${p}t">Date *</label><input id="${p}t" type="date" max="${today()}"><div class="err" id="${p}tE"></div></div>
+  <div><label for="${p}l">Location *</label><input id="${p}l" maxlength="100" placeholder="Building, room, or area"><div class="err" id="${p}lE"></div></div>
+  <div><label for="${p}k">Contact information *</label><input id="${p}k" maxlength="100" placeholder="Email or phone number"><div class="err" id="${p}kE"></div></div>
+  ${withPhoto ? `<div><label for="${p}i">Photograph (optional, max 3 MB)</label><input id="${p}i" type="file" accept="image/*"><div class="err" id="${p}iE"></div><div class="preview" id="${p}p" hidden><img alt="Preview"><button type="button" class="btn alt sm" id="${p}x">Remove photo</button></div></div>` : ''}`;
+}
+const photos = {};   // holds the compressed image for each form
+function buildReportForm(type, box) {
+  const p = type[0];
+  box.innerHTML = `<form class="form card" novalidate>${formHTML(p, true)}
+    <p class="note">Reports are shared publicly with other visitors. Avoid posting sensitive personal information.</p>
+    <button class="btn" style="justify-self:start">Submit ${type} report</button></form>`;
+  const form = box.firstElementChild;
+  $('#'+p+'t').value = today();
+  $('#'+p+'i').onchange = e => handlePhoto(e.target.files[0], p);
+  $('#'+p+'x').onclick = () => clearPhoto(p);
+  form.onsubmit = async e => {
+    e.preventDefault();
+    const data = readForm(p); if (!data) return;
+    const now = new Date().toISOString();
+    const draft = {id:newId(), ...data, reportType:type, image:photos[p] || '', status:'Pending', createdAt:now, updatedAt:now};
+    const submitBtn = form.querySelector('button[type=submit],button:not([type])'); if (submitBtn) submitBtn.disabled = true;
+    try { reports.unshift(await insertReport(draft)); form.reset(); clearPhoto(p); $('#'+p+'t').value = today(); toast('Report submitted successfully.'); syncFilters(); render(); }
+    catch(err) { console.error(err); toast('Could not submit report. Check Supabase policies and connection.', 'error'); }
+    finally { if (submitBtn) submitBtn.disabled = false; }
+  };
+}
+/* Validate a form and return its values, or null if something is missing */
+function readForm(p) {
+  const get = k => $('#'+p+k).value.trim();
+  const d = {itemName:get('n'), category:$('#'+p+'c').value, description:get('d'), date:$('#'+p+'t').value, location:get('l'), contact:get('k')};
+  const need = {n:['itemName','Enter the item name.'], c:['category','Choose a category.'], d:['description','Add a short description.'], t:['date','Pick a date.'], l:['location','Enter the location.'], k:['contact','Enter an email or phone number.']};
+  let ok = true;
+  for (const k in need) { const bad = !d[need[k][0]]; $('#'+p+k+'E').textContent = bad ? need[k][1] : ''; if (bad) ok = false; }
+  if (d.date > today()) { $('#'+p+'tE').textContent = 'Date cannot be in the future.'; ok = false; }
+  if (!ok) toast('Please fill in the required fields.', 'error');
+  return ok ? d : null;
+}
+/* Check size, shrink the picture with a canvas, store as Base64 */
+function handlePhoto(file, p) {
+  const err = $('#'+p+'iE'); err.textContent = '';
+  if (!file) return clearPhoto(p);
+  if (!file.type.startsWith('image/')) { err.textContent = 'Please choose an image file.'; return clearPhoto(p); }
+  if (file.size > 3 * 1024 * 1024) { err.textContent = 'Image file exceeds the allowed size of 3 MB.'; toast('Image file exceeds the allowed size.', 'error'); return clearPhoto(p); }
+  const fr = new FileReader();
+  fr.onload = () => { const img = new Image(); img.onload = () => {
+    const s = Math.min(1, 640 / Math.max(img.width, img.height)), c = document.createElement('canvas');
+    c.width = img.width * s; c.height = img.height * s; c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+    photos[p] = c.toDataURL('image/jpeg', 0.7); $('#'+p+'p img').src = photos[p]; $('#'+p+'p').hidden = false;
+  }; img.onerror = () => err.textContent = 'That image could not be read.'; img.src = fr.result; };
+  fr.readAsDataURL(file);
+}
+function clearPhoto(p) { delete photos[p]; $('#'+p+'i').value = ''; $('#'+p+'p').hidden = true; }
+buildReportForm('lost', $('#formLost')); buildReportForm('found', $('#formFound'));
+
+/* ===== Item details & status changes ===== */
+function showDetail(id) {
+  const r = reports.find(x => x.id === id); if (!r) return;
+  const act = [];
+  if (r.status === 'Pending') act.push(`<button class="btn" data-st="Claimed">Mark as claimed</button>`);
+  if (admin && r.status !== 'Returned') act.push(`<button class="btn" data-st="Returned">Mark as returned</button>`);
+  if (admin && r.status !== 'Pending') act.push(`<button class="btn alt" data-st="Pending">Revert to pending</button>`);
+  openDlg(`<div class="detail">${r.image ? `<img src="${r.image}" alt="Photo of ${esc(r.itemName)}">` : ''}
+    <div class="tags"><span class="tag t-${r.reportType}">${r.reportType === 'lost' ? 'Lost' : 'Found'}</span><span class="tag s-${r.status}">${r.status}</span></div>
+    <h2>${esc(r.itemName)}</h2><p>${esc(r.description)}</p>
+    <dl><dt>Category</dt><dd>${esc(r.category)}</dd><dt>Date ${r.reportType}</dt><dd>${esc(r.date)}</dd><dt>Location</dt><dd>${esc(r.location)}</dd>
+    <dt>Contact</dt><dd>${esc(r.contact)}</dd><dt>Report ID</dt><dd>${esc(r.id)}</dd></dl>
+    <p class="note">Contact details are visible to visitors. Verify ownership before handing over any item.</p>
+    <div class="acts" id="acts">${contactBtn(r)}${act.join('')}<button class="btn alt" id="close">Close</button></div></div>`);
+  $('#close').onclick = () => $('#dlg').close();
+  $('#acts').onclick = e => { const b = e.target.closest('[data-st]'); if (b) setStatus(id, b.dataset.st); const cp = e.target.closest('[data-copy]'); if (cp) { navigator.clipboard?.writeText(cp.dataset.copy); toast('Contact copied.'); } };
+}
+function contactBtn(r) {
+  const c = r.contact.trim();
+  if (/^\S+@\S+\.\S+$/.test(c)) return `<a class="btn" href="mailto:${esc(c)}?subject=${encodeURIComponent('Lost & Found: ' + r.itemName)}" style="text-decoration:none">Contact reporter</a>`;
+  if (/^[+\d][\d\s\-()]{5,}$/.test(c)) return `<a class="btn" href="tel:${esc(c.replace(/[^\d+]/g,''))}" style="text-decoration:none">Contact reporter</a>`;
+  return `<button class="btn" data-copy="${esc(c)}">Copy contact</button>`;
+}
+/* Change a status once; ignore repeats; keep original report data */
+async function setStatus(id, st) {
+  const r = reports.find(x => x.id === id); if (!r || r.status === st) return;
+  if (st !== 'Claimed' && !admin) return toast('Only administrators can do that.', 'error');
+  const old = r.status; const oldUpdated = r.updatedAt;
+  r.status = st; r.updatedAt = new Date().toISOString(); render();
+  try { Object.assign(r, await updateReport(id, r)); toast(st === 'Pending' ? 'Status reverted to pending.' : 'Item marked as ' + st.toLowerCase() + '.'); if ($('#dlg').open) showDetail(id); render(); }
+  catch(err) { console.error(err); r.status = old; r.updatedAt = oldUpdated; render(); toast('Status update failed. Check Supabase update policy.', 'error'); }
+}
+
+/* ===== Admin ===== */
+$('#login').onclick = () => {
+  if ($('#pw').value === 'admin123') { admin = true; sessionStorage.setItem('clfAdmin','1'); $('#pw').value = ''; $('#pwErr').textContent = ''; toast('Logged in (prototype).'); render(); }
+  else { $('#pwErr').textContent = 'Incorrect password.'; toast('Incorrect password.', 'error'); }
+};
+$('#logout').onclick = () => { admin = false; sessionStorage.removeItem('clfAdmin'); render(); };
+$('#pw').onkeydown = e => { if (e.key === 'Enter') $('#login').click(); };
+const A = {q:'',type:'',status:'',sort:'new'};
+[['aq','q'],['at','type'],['as','status'],['ao','sort']].forEach(([id,k]) => $('#'+id).addEventListener(id==='aq'?'input':'change', e => { A[k] = e.target.value; renderAdmin(); }));
+function renderAdmin() {
+  const c = counts();
+  $('#adminStats').innerHTML = statBox(c.total,'Total reports') + statBox(c.lost,'Lost') + statBox(c.found,'Found') + statBox(c.Pending,'Pending') + statBox(c.Claimed,'Claimed') + statBox(c.Returned,'Returned');
+  const max = Math.max(1, ...CATS.map(k => reports.filter(r => r.category === k).length));
+  $('#chart').innerHTML = CATS.map(k => { const n = reports.filter(r => r.category === k).length; return `<div class="bar-row"><span>${esc(k)}</span><i style="width:${n/max*100}%"></i><b>${n}</b></div>`; }).join('');
+  const list = applyFilters(reports, {...F, q:A.q, type:A.type, cat:'', status:A.status, loc:'', sort:A.sort});
+  $('#aEmpty').hidden = list.length > 0;
+  $('#rows').innerHTML = list.map(r => `<tr><td>${esc(r.id)}</td><td>${esc(r.itemName)}</td><td><span class="tag t-${r.reportType}">${r.reportType}</span></td><td>${esc(r.category)}</td><td>${esc(r.date)}</td><td>${esc(r.location)}</td>
+    <td><select data-set="${r.id}" aria-label="Status">${['Pending','Claimed','Returned'].map(s => `<option ${s===r.status?'selected':''}>${s}</option>`).join('')}</select></td>
+    <td><button class="btn alt sm" data-view="${r.id}">View</button> <button class="btn alt sm" data-edit="${r.id}">Edit</button> <button class="btn bad sm" data-del="${r.id}">Delete</button></td></tr>`).join('');
+}
+$('#rows').addEventListener('change', e => { if (e.target.dataset.set) setStatus(e.target.dataset.set, e.target.value); });
+$('#rows').addEventListener('click', e => {
+  const d = e.target.closest('[data-del]'), ed = e.target.closest('[data-edit]');
+  if (d) confirmBox('Delete this report? This cannot be undone.', () => {
+    (async () => { const keep = reports; reports = reports.filter(r => r.id !== d.dataset.del); try { await deleteReport(d.dataset.del); toast('Report deleted.'); syncFilters(); render(); } catch(err) { console.error(err); reports = keep; render(); toast('Delete failed. Check Supabase delete policy.', 'error'); } })();
+  });
+  if (ed) editReport(ed.dataset.edit);
+});
+function editReport(id) {
+  const r = reports.find(x => x.id === id); if (!r) return;
+  openDlg(`<h3>Edit report ${esc(r.id)}</h3><form class="form" id="ef" novalidate>${formHTML('e', false)}<div class="acts"><button class="btn">Save changes</button><button type="button" class="btn alt" id="no">Cancel</button></div></form>`);
+  $('#en').value = r.itemName; $('#ec').value = r.category; $('#ed').value = r.description; $('#et').value = r.date; $('#el').value = r.location; $('#ek').value = r.contact;
+  $('#no').onclick = () => $('#dlg').close();
+  $('#ef').onsubmit = async e => {
+    e.preventDefault(); const d = readForm('e'); if (!d) return;
+    const old = {...r}; Object.assign(r, d, {updatedAt:new Date().toISOString()});
+    try { Object.assign(r, await updateReport(id, r)); $('#dlg').close(); toast('Report updated successfully.'); syncFilters(); render(); }
+    catch(err) { console.error(err); Object.assign(r, old); render(); toast('Edit failed. Check Supabase update policy.', 'error'); }
+  };
+}
+$('#sample').onclick = async () => {
+  const mk = (t,n,c,d,l,k,s) => { const now = new Date().toISOString(); return {id:newId(), itemName:n, category:c, description:d, reportType:t, date:today(), location:l, contact:k, image:'', status:s, createdAt:now, updatedAt:now}; };
+  const samples = [mk('lost','Blue water bottle','Accessories','Dented steel bottle with a sticker of a sun.','Library, 2nd floor','sample@school.test','Pending'),
+    mk('found','Student ID card','ID Card','Found near the cafeteria entrance. Name partly worn.','Cafeteria','0917 000 0000','Pending'),
+    mk('found','Black umbrella','Other','Folding umbrella left in Room 204.','Science Building','front-desk@school.test','Returned')];
+  try { for (const sample of samples) reports.unshift(await insertReport(sample)); toast('Sample reports added.'); syncFilters(); render(); }
+  catch(err) { console.error(err); toast('Sample insertion failed. Check Supabase policies.', 'error'); }
+};
+$('#dlg').addEventListener('click', e => { if (e.target === $('#dlg')) $('#dlg').close(); });
+
+/* ===== Start ===== */
+syncFilters(); go('home');
+fetchReports().catch(err => { console.error(err); dataReady = true; toast('Could not load shared reports. Check Supabase setup and policies.', 'error'); });
+</script>
+</body>
+</html>
